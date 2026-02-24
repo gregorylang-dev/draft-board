@@ -42,6 +42,10 @@ export class Grid {
 
   rounds = computed(() => Array.from({ length: this.maxPicks() }, (_, i) => i + 1));
 
+  onResetTimer() {
+    this.draftService.manualResetTimer();
+  }
+
   getTeamColor(team: string) {
     return this.draftService.getTeamColor(team);
   }

@@ -57,6 +57,10 @@ export class DraftService {
     this.timeRemaining.set(180);
   }
 
+  manualResetTimer() {
+    this.resetTimer();
+  }
+
   private loadInitialPlayers(): Player[] {
     const defaultPlayers: Player[] = [
       { id: '1', name: 'Christian McCaffrey', position: 'RB', team: 'SF', isDrafted: false },
@@ -109,7 +113,6 @@ export class DraftService {
       { id: '48', name: 'DeVonta Smith', position: 'WR', team: 'PHI', isDrafted: false },
       { id: '49', name: 'Zay Flowers', position: 'WR', team: 'BAL', isDrafted: false },
       { id: '50', name: 'Tank Dell', position: 'WR', team: 'HOU', isDrafted: false },
-      { id: '51', name: 'Jaylen Warren', position: 'RB', team: 'PIT', isDrafted: false },
     ];
 
     if (typeof window !== 'undefined' && window.localStorage) {

@@ -46,6 +46,10 @@ export class Home {
     this.selectedTeam.set(team);
   }
 
+  onResetTimer() {
+    this.draftService.manualResetTimer();
+  }
+
   getTeamColor(team: string) {
     return this.draftService.getTeamColor(team);
   }
