@@ -1,15 +1,8 @@
 import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Player, getDefaultPlayers } from './nfl-players';
 
-export interface Player {
-  id: string;
-  name: string;
-  position: 'QB' | 'RB' | 'WR' | 'TE' | 'K' | 'DEF';
-  team: string;
-  isDrafted: boolean;
-  draftedBy?: string;
-  draftPick?: number;
-}
+export type { Player };
 
 export interface DraftPick {
   pickNumber: number;
@@ -62,58 +55,7 @@ export class DraftService {
   }
 
   private loadInitialPlayers(): Player[] {
-    const defaultPlayers: Player[] = [
-      { id: '1', name: 'Christian McCaffrey', position: 'RB', team: 'SF', isDrafted: false },
-      { id: '2', name: 'Justin Jefferson', position: 'WR', team: 'MIN', isDrafted: false },
-      { id: '3', name: 'Tyreek Hill', position: 'WR', team: 'MIA', isDrafted: false },
-      { id: '4', name: 'CeeDee Lamb', position: 'WR', team: 'DAL', isDrafted: false },
-      { id: '5', name: 'Ja\'Marr Chase', position: 'WR', team: 'CIN', isDrafted: false },
-      { id: '6', name: 'Breece Hall', position: 'RB', team: 'NYJ', isDrafted: false },
-      { id: '7', name: 'Bijan Robinson', position: 'RB', team: 'ATL', isDrafted: false },
-      { id: '8', name: 'Amon-Ra St. Brown', position: 'WR', team: 'DET', isDrafted: false },
-      { id: '9', name: 'A.J. Brown', position: 'WR', team: 'PHI', isDrafted: false },
-      { id: '10', name: 'Garrett Wilson', position: 'WR', team: 'NYJ', isDrafted: false },
-      { id: '11', name: 'Jahmyr Gibbs', position: 'RB', team: 'DET', isDrafted: false },
-      { id: '12', name: 'Saquon Barkley', position: 'RB', team: 'PHI', isDrafted: false },
-      { id: '13', name: 'Jonathan Taylor', position: 'RB', team: 'IND', isDrafted: false },
-      { id: '14', name: 'Kyren Williams', position: 'RB', team: 'LAR', isDrafted: false },
-      { id: '15', name: 'Puka Nacua', position: 'WR', team: 'LAR', isDrafted: false },
-      { id: '16', name: 'Marvin Harrison Jr.', position: 'WR', team: 'ARI', isDrafted: false },
-      { id: '17', name: 'Drake London', position: 'WR', team: 'ATL', isDrafted: false },
-      { id: '18', name: 'Chris Olave', position: 'WR', team: 'NO', isDrafted: false },
-      { id: '19', name: 'Josh Allen', position: 'QB', team: 'BUF', isDrafted: false },
-      { id: '20', name: 'Jalen Hurts', position: 'QB', team: 'PHI', isDrafted: false },
-      { id: '21', name: 'Patrick Mahomes', position: 'QB', team: 'KC', isDrafted: false },
-      { id: '22', name: 'Lamar Jackson', position: 'QB', team: 'BAL', isDrafted: false },
-      { id: '23', name: 'Travis Kelce', position: 'TE', team: 'KC', isDrafted: false },
-      { id: '24', name: 'Sam LaPorta', position: 'TE', team: 'DET', isDrafted: false },
-      { id: '25', name: 'Mark Andrews', position: 'TE', team: 'BAL', isDrafted: false },
-      { id: '26', name: 'Davante Adams', position: 'WR', team: 'LV', isDrafted: false },
-      { id: '27', name: 'Stefon Diggs', position: 'WR', team: 'HOU', isDrafted: false },
-      { id: '28', name: 'Deebo Samuel', position: 'WR', team: 'SF', isDrafted: false },
-      { id: '29', name: 'Brandon Aiyuk', position: 'WR', team: 'SF', isDrafted: false },
-      { id: '30', name: 'Nico Collins', position: 'WR', team: 'HOU', isDrafted: false },
-      { id: '31', name: 'Jaylen Waddle', position: 'WR', team: 'MIA', isDrafted: false },
-      { id: '32', name: 'Derrick Henry', position: 'RB', team: 'BAL', isDrafted: false },
-      { id: '33', name: 'Travis Etienne', position: 'RB', team: 'JAX', isDrafted: false },
-      { id: '34', name: 'Isiah Pacheco', position: 'RB', team: 'KC', isDrafted: false },
-      { id: '35', name: 'Josh Jacobs', position: 'RB', team: 'GB', isDrafted: false },
-      { id: '36', name: 'James Cook', position: 'RB', team: 'BUF', isDrafted: false },
-      { id: '37', name: 'Joe Mixon', position: 'RB', team: 'HOU', isDrafted: false },
-      { id: '38', name: 'C.J. Stroud', position: 'QB', team: 'HOU', isDrafted: false },
-      { id: '39', name: 'Joe Burrow', position: 'QB', team: 'CIN', isDrafted: false },
-      { id: '40', name: 'Anthony Richardson', position: 'QB', team: 'IND', isDrafted: false },
-      { id: '41', name: 'Trey McBride', position: 'TE', team: 'ARI', isDrafted: false },
-      { id: '42', name: 'Dalton Kincaid', position: 'TE', team: 'BUF', isDrafted: false },
-      { id: '43', name: 'George Kittle', position: 'TE', team: 'SF', isDrafted: false },
-      { id: '44', name: 'Kyle Pitts', position: 'TE', team: 'ATL', isDrafted: false },
-      { id: '45', name: 'Evan Engram', position: 'TE', team: 'JAX', isDrafted: false },
-      { id: '46', name: 'Cooper Kupp', position: 'WR', team: 'LAR', isDrafted: false },
-      { id: '47', name: 'DK Metcalf', position: 'WR', team: 'SEA', isDrafted: false },
-      { id: '48', name: 'DeVonta Smith', position: 'WR', team: 'PHI', isDrafted: false },
-      { id: '49', name: 'Zay Flowers', position: 'WR', team: 'BAL', isDrafted: false },
-      { id: '50', name: 'Tank Dell', position: 'WR', team: 'HOU', isDrafted: false },
-    ];
+    const defaultPlayers: Player[] = getDefaultPlayers();
 
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = localStorage.getItem(this.STORAGE_KEY);
