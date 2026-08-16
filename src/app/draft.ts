@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { ref, onValue, set } from 'firebase/database';
 import { db } from './firebase.config';
 import { Player, getDefaultPlayers } from './nfl-players';
 
@@ -48,11 +48,11 @@ export class DraftService {
   private initFirebaseSync() {
     if (!this.isBrowser) return;
     try {
-      const docRef = doc(db, 'drafts', 'current_session');
-      onSnapshot(docRef, (snapshot) => {
+      const sessionRef = ref(db, 'draft_session');
+      onValue(sessionRef, (snapshot) => {
         if (snapshot.exists()) {
           this.isSynced.set(true);
-          const data = snapshot.data();
+          const data = snapshot.val();
           const remoteLog = ((data['draftLog'] as any[]) || []).map((pick: any) => ({
             ...pick,
             timestamp: new Date(pick.timestamp)
@@ -65,7 +65,7 @@ export class DraftService {
           this.isSynced.set(true);
         }
       }, (error) => {
-        console.warn('Firebase Real-time Sync connection issue:', error);
+        console.warn('Firebase Realtime Database sync connection issue:', error);
         this.isSynced.set(false);
       });
     } catch (e) {
@@ -107,19 +107,19 @@ export class DraftService {
   private pushToFirebase(pulsingPickNumber: number | null = null) {
     if (!this.isBrowser || this.isApplyingRemoteUpdate) return;
     try {
-      const docRef = doc(db, 'drafts', 'current_session');
+      const sessionRef = ref(db, 'draft_session');
       const serializableLog = this.draftLog().map(pick => ({
         ...pick,
         timestamp: pick.timestamp instanceof Date ? pick.timestamp.toISOString() : pick.timestamp
       }));
 
-      setDoc(docRef, {
+      set(sessionRef, {
         draftLog: serializableLog,
         currentPickIndex: this.currentPickIndex(),
         pulsingPickNumber: pulsingPickNumber,
         lastUpdated: new Date().toISOString()
-      }, { merge: true }).catch(err => {
-        console.warn('Error saving to Firebase:', err);
+      }).catch(err => {
+        console.warn('Error saving to Firebase Realtime Database:', err);
       });
     } catch (err) {
       console.warn('Firebase push failed:', err);
