@@ -41,6 +41,7 @@ export class DraftService {
 
   pulsingPickNumber = signal<number | null>(null);
   isSynced = signal<boolean>(false);
+  autoFlipEnabled = signal<boolean>(this.loadAutoFlipSetting());
   private pulseTimeout: ReturnType<typeof setTimeout> | undefined;
   private isApplyingRemoteUpdate = false;
 
@@ -50,6 +51,21 @@ export class DraftService {
   constructor() {
     this.startTimer();
     this.initFirebaseSync();
+  }
+
+  private loadAutoFlipSetting(): boolean {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem('draft_auto_flip');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  }
+
+  toggleAutoFlip() {
+    this.autoFlipEnabled.update(v => !v);
+    if (this.isBrowser) {
+      localStorage.setItem('draft_auto_flip', String(this.autoFlipEnabled()));
+    }
   }
 
   private initFirebaseSync() {
@@ -147,7 +163,7 @@ export class DraftService {
       if (this.timeRemaining() > 0) {
         this.timeRemaining.update(time => {
           const nextTime = time - 1;
-          if (nextTime === 60) {
+          if (nextTime === 60 && this.autoFlipEnabled()) {
             this.router.navigate(['/draft-room']);
           }
           return nextTime;
@@ -325,7 +341,9 @@ export class DraftService {
     }, 10000);
 
     this.pushToFirebase(pickNumber);
-    this.router.navigate(['/']);
+    if (this.autoFlipEnabled()) {
+      this.router.navigate(['/']);
+    }
   }
 
   getRoster(teamName: string) {
