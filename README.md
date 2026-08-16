@@ -1,6 +1,7 @@
 # DraftBoard
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli)
+To browse the live site, go to https://gregorylang-dev.github.io/draft-board/
 
 ## Development server
 
