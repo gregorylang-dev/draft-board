@@ -16,6 +16,12 @@ export interface DraftPick {
   timestamp: Date;
 }
 
+export const DEFAULT_TEAMS = [
+  'Team 1', 'Team 2', 'Team 3', 'Team 4', 
+  'Team 5', 'Team 6', 'Team 7', 'Team 8', 
+  'Team 9', 'Team 10'
+];
+
 @Injectable({
   providedIn: 'root'
 })
@@ -28,11 +34,7 @@ export class DraftService {
   private toastService = inject(ToastService);
 
   private players = signal<Player[]>(this.loadInitialPlayers());
-  private teams = signal<string[]>([
-    'Team 1', 'Team 2', 'Team 3', 'Team 4', 
-    'Team 5', 'Team 6', 'Team 7', 'Team 8', 
-    'Team 9', 'Team 10'
-  ]);
+  private teams = signal<string[]>(this.loadInitialTeams());
 
   private draftLog = signal<DraftPick[]>(this.loadInitialLog());
   private currentPickIndex = signal(this.loadInitialIndex());
@@ -82,8 +84,9 @@ export class DraftService {
           }));
           const remoteIndex = typeof data['currentPickIndex'] === 'number' ? data['currentPickIndex'] : 0;
           const remotePulse = typeof data['pulsingPickNumber'] === 'number' ? data['pulsingPickNumber'] : null;
+          const remoteTeams = Array.isArray(data['teams']) && data['teams'].length > 0 ? data['teams'] : [...DEFAULT_TEAMS];
 
-          this.applyRemoteState(remoteLog, remoteIndex, remotePulse);
+          this.applyRemoteState(remoteLog, remoteIndex, remotePulse, remoteTeams);
         } else {
           this.isSynced.set(true);
         }
@@ -97,11 +100,15 @@ export class DraftService {
     }
   }
 
-  private applyRemoteState(remoteLog: DraftPick[], remoteIndex: number, remotePulse: number | null) {
+  private applyRemoteState(remoteLog: DraftPick[], remoteIndex: number, remotePulse: number | null, remoteTeams?: string[]) {
     this.isApplyingRemoteUpdate = true;
     this.lastConfirmedLog = remoteLog;
     this.lastConfirmedIndex = remoteIndex;
     
+    if (remoteTeams && Array.isArray(remoteTeams)) {
+      this.teams.set(remoteTeams);
+    }
+
     // Reconstruct player state from remote log
     const defaultPlayers: Player[] = getDefaultPlayers();
     remoteLog.forEach((pick: DraftPick) => {
@@ -142,6 +149,7 @@ export class DraftService {
         draftLog: serializableLog,
         currentPickIndex: this.currentPickIndex(),
         pulsingPickNumber: pulsingPickNumber,
+        teams: this.teams(),
         lastUpdated: new Date().toISOString()
       }).catch(err => {
         console.warn('Error saving to Firebase Realtime Database:', err);
@@ -206,6 +214,23 @@ export class DraftService {
     return defaultPlayers;
   }
 
+  private loadInitialTeams(): string[] {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (Array.isArray(data.teams) && data.teams.length === DEFAULT_TEAMS.length) {
+            return data.teams;
+          }
+        } catch (error) {
+          console.error('Error loading initial teams', error);
+        }
+      }
+    }
+    return [...DEFAULT_TEAMS];
+  }
+
   private loadInitialLog(): DraftPick[] {
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = localStorage.getItem(this.STORAGE_KEY);
@@ -237,7 +262,7 @@ export class DraftService {
   }
 
   private saveToLocalStorage() {
-    if (this.isBrowser) {
+    if (this.isBrowser && typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem(this.STORAGE_KEY, this.exportToJSON());
     }
   }
@@ -346,11 +371,68 @@ export class DraftService {
     }
   }
 
+  undoLastPick() {
+    if (!this.authService.currentUser()) {
+      this.toastService.show('You do not have permission to undo draft picks.', 'error');
+      return;
+    }
+
+    const currentLog = this.draftLog();
+    if (currentLog.length === 0) return;
+
+    const lastPick = currentLog[currentLog.length - 1];
+
+    // Remove last pick from log
+    this.draftLog.update(log => log.slice(0, log.length - 1));
+
+    // Reset player drafted status
+    this.players.update(players => players.map(p => 
+      p.id === lastPick.player.id ? { ...p, isDrafted: false, draftedBy: undefined, draftPick: undefined } : p
+    ));
+
+    // Decrement current pick index
+    this.currentPickIndex.update(i => Math.max(0, i - 1));
+
+    // Reset pulsing pick if matching
+    if (this.pulsingPickNumber() === lastPick.pickNumber) {
+      this.pulsingPickNumber.set(null);
+    }
+
+    this.resetTimer();
+    this.saveToLocalStorage();
+    this.pushToFirebase(null);
+  }
+
   getRoster(teamName: string) {
     return computed(() => this.players().filter(p => p.draftedBy === teamName));
   }
 
+  updateTeamName(index: number, newName: string) {
+    const trimmed = newName.trim();
+    const validName = trimmed.length > 0 ? trimmed : DEFAULT_TEAMS[index] || `Team ${index + 1}`;
+    const currentTeams = [...this.teams()];
+    if (index < 0 || index >= currentTeams.length) return;
+    const oldName = currentTeams[index];
+    if (oldName === validName) return;
+
+    currentTeams[index] = validName;
+    this.teams.set(currentTeams);
+
+    // Update existing picks in log & players if team was renamed
+    this.draftLog.update(log => log.map(pick => 
+      pick.teamName === oldName ? { ...pick, teamName: validName } : pick
+    ));
+
+    this.players.update(players => players.map(p => 
+      p.draftedBy === oldName ? { ...p, draftedBy: validName } : p
+    ));
+
+    this.saveToLocalStorage();
+    this.pushToFirebase(this.pulsingPickNumber());
+  }
+
   resetDraft() {
+    this.teams.set([...DEFAULT_TEAMS]);
     this.players.update(players => players.map(p => ({ ...p, isDrafted: false, draftedBy: undefined, draftPick: undefined })));
     this.draftLog.set([]);
     this.currentPickIndex.set(0);
@@ -364,7 +446,8 @@ export class DraftService {
   exportToJSON(): string {
     const data = {
       draftLog: this.draftLog(),
-      currentPickIndex: this.currentPickIndex()
+      currentPickIndex: this.currentPickIndex(),
+      teams: this.teams()
     };
     return JSON.stringify(data, null, 2);
   }
@@ -379,13 +462,18 @@ export class DraftService {
       // Reset first
       this.resetDraft();
 
-      // Restore log
+      // Restore log & teams
       const log = (data.draftLog as DraftPick[]).map((pick: DraftPick) => ({
         ...pick,
         timestamp: new Date(pick.timestamp)
       }));
       this.draftLog.set(log);
       this.currentPickIndex.set(data.currentPickIndex);
+      if (Array.isArray(data.teams) && data.teams.length === DEFAULT_TEAMS.length) {
+        this.teams.set(data.teams);
+      } else {
+        this.teams.set([...DEFAULT_TEAMS]);
+      }
 
       // Update players state based on log
       this.players.update(players => {

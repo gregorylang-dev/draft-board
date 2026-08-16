@@ -37,15 +37,35 @@
 
   <main class="flex-1 overflow-x-auto glass-panel p-6 custom-scrollbar">
     <div class="inline-flex gap-4 min-w-full">
-      @for (team of allTeams(); track team) {
-        <div class="flex-shrink-0 w-64 flex flex-col gap-4">
-          <!-- Team Header -->
-          <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-lg text-center">
-            <h3 class="font-bold text-emerald-400 truncate">{{ team }}</h3>
-            <div class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">
-              {{ teamPicks()[team].length }} Picks
+    @for (team of allTeams(); track $index; let i = $index) {
+      <div class="flex-shrink-0 w-64 flex flex-col gap-4">
+        <!-- Team Header -->
+        <div class="bg-zinc-950 border border-zinc-800 p-3 rounded-lg text-center relative min-h-[72px] flex flex-col justify-center">
+          @if (editingIndex() === i) {
+            <input 
+              type="text" 
+              [ngModel]="editingValue()" 
+              (ngModelChange)="editingValue.set($event)"
+              (keyup.enter)="saveTeamName(i)" 
+              (keyup.escape)="cancelEditing()" 
+              (blur)="saveTeamName(i)"
+              class="w-full bg-zinc-900 border border-emerald-500 rounded px-2 py-1 text-center font-bold text-emerald-400 focus:outline-none text-base"
+              autofocus
+            >
+          } @else {
+            <div 
+              (click)="startEditing(i, team)"
+              class="cursor-pointer hover:bg-zinc-900/60 px-2 py-1 rounded-md transition-colors flex items-center justify-center gap-1.5 group/title"
+              title="Click to edit team name"
+            >
+              <h3 class="font-bold text-emerald-400 truncate text-base group-hover/title:text-emerald-300">{{ team }}</h3>
+              <mat-icon class="text-sm text-zinc-500 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</mat-icon>
             </div>
-          </div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">
+              {{ teamPicks()[team]?.length || 0 }} Picks
+            </div>
+          }
+        </div>
 
           <!-- Picks List -->
           <div class="flex flex-col gap-2">

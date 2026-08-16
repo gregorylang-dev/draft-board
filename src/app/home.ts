@@ -36,13 +36,23 @@ export class Home {
     );
   });
 
+  effectiveSelectedTeam = computed(() => {
+    const teams = this.allTeams();
+    const current = this.selectedTeam();
+    return teams.includes(current) ? current : (teams[0] || 'Team 1');
+  });
+
   selectedTeamRoster = computed(() => {
-    return this.draftService.getRoster(this.selectedTeam())();
+    return this.draftService.getRoster(this.effectiveSelectedTeam())();
   });
 
   onDraft(player: Player) {
     this.draftService.draftPlayer(player.id);
     this.searchQuery.set('');
+  }
+
+  onUndoLastPick() {
+    this.draftService.undoLastPick();
   }
 
   selectTeam(team: string) {
