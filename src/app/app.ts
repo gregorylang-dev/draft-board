@@ -11,6 +11,7 @@ import { DraftService } from './draft';
 })
 export class App {
   private draftService = inject(DraftService);
+  isSynced = this.draftService.isSynced;
 
   onReset() {
     if (confirm('Are you sure you want to reset the entire draft?')) {

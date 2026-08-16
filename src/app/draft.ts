@@ -1,6 +1,8 @@
 import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from './firebase.config';
 import { Player, getDefaultPlayers } from './nfl-players';
 
 export type { Player };
@@ -34,10 +36,94 @@ export class DraftService {
   private timerInterval: ReturnType<typeof setInterval> | undefined;
 
   pulsingPickNumber = signal<number | null>(null);
+  isSynced = signal<boolean>(false);
   private pulseTimeout: ReturnType<typeof setTimeout> | undefined;
+  private isApplyingRemoteUpdate = false;
 
   constructor() {
     this.startTimer();
+    this.initFirebaseSync();
+  }
+
+  private initFirebaseSync() {
+    if (!this.isBrowser) return;
+    try {
+      const docRef = doc(db, 'drafts', 'current_session');
+      onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+          this.isSynced.set(true);
+          const data = snapshot.data();
+          const remoteLog = ((data['draftLog'] as any[]) || []).map((pick: any) => ({
+            ...pick,
+            timestamp: new Date(pick.timestamp)
+          }));
+          const remoteIndex = typeof data['currentPickIndex'] === 'number' ? data['currentPickIndex'] : 0;
+          const remotePulse = typeof data['pulsingPickNumber'] === 'number' ? data['pulsingPickNumber'] : null;
+
+          this.applyRemoteState(remoteLog, remoteIndex, remotePulse);
+        } else {
+          this.isSynced.set(true);
+        }
+      }, (error) => {
+        console.warn('Firebase Real-time Sync connection issue:', error);
+        this.isSynced.set(false);
+      });
+    } catch (e) {
+      console.warn('Failed to initialize Firebase Sync:', e);
+      this.isSynced.set(false);
+    }
+  }
+
+  private applyRemoteState(remoteLog: DraftPick[], remoteIndex: number, remotePulse: number | null) {
+    this.isApplyingRemoteUpdate = true;
+    
+    // Reconstruct player state from remote log
+    const defaultPlayers: Player[] = getDefaultPlayers();
+    remoteLog.forEach((pick: DraftPick) => {
+      const p = defaultPlayers.find(player => player.id === pick.player.id);
+      if (p) {
+        p.isDrafted = true;
+        p.draftedBy = pick.teamName;
+        p.draftPick = pick.pickNumber;
+      }
+    });
+
+    this.players.set(defaultPlayers);
+    this.draftLog.set(remoteLog);
+    this.currentPickIndex.set(remoteIndex);
+
+    if (remotePulse !== null && remotePulse !== this.pulsingPickNumber()) {
+      this.pulsingPickNumber.set(remotePulse);
+      if (this.pulseTimeout) clearTimeout(this.pulseTimeout);
+      this.pulseTimeout = setTimeout(() => {
+        this.pulsingPickNumber.set(null);
+      }, 10000);
+    }
+
+    this.saveToLocalStorage();
+    this.isApplyingRemoteUpdate = false;
+  }
+
+  private pushToFirebase(pulsingPickNumber: number | null = null) {
+    if (!this.isBrowser || this.isApplyingRemoteUpdate) return;
+    try {
+      const docRef = doc(db, 'drafts', 'current_session');
+      const serializableLog = this.draftLog().map(pick => ({
+        ...pick,
+        timestamp: pick.timestamp instanceof Date ? pick.timestamp.toISOString() : pick.timestamp
+      }));
+
+      setDoc(docRef, {
+        draftLog: serializableLog,
+        currentPickIndex: this.currentPickIndex(),
+        pulsingPickNumber: pulsingPickNumber,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true }).catch(err => {
+        console.warn('Error saving to Firebase:', err);
+      });
+    } catch (err) {
+      console.warn('Firebase push failed:', err);
+    }
   }
 
   private startTimer() {
@@ -220,6 +306,7 @@ export class DraftService {
       this.pulsingPickNumber.set(null);
     }, 10000);
 
+    this.pushToFirebase(pickNumber);
     this.router.navigate(['/']);
   }
 
@@ -235,6 +322,7 @@ export class DraftService {
     if (this.pulseTimeout) clearTimeout(this.pulseTimeout);
     this.resetTimer();
     this.saveToLocalStorage();
+    this.pushToFirebase(null);
   }
 
   exportToJSON(): string {
@@ -281,6 +369,7 @@ export class DraftService {
       });
       this.resetTimer();
       this.saveToLocalStorage();
+      this.pushToFirebase(null);
     } catch (e) {
       console.error('Failed to import draft:', e);
       alert('Failed to import draft file. Please ensure it is a valid DraftMaster save file.');
