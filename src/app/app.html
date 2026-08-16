@@ -34,6 +34,32 @@
           <div class="w-2 h-2 rounded-full bg-emerald-500/50"></div>
         }
       </div>
+
+      <!-- Google Authentication Section -->
+      <div class="h-4 w-px bg-zinc-800"></div>
+      @if (currentUser(); as user) {
+        <div class="flex items-center gap-2.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full">
+          @if (user.photoURL) {
+            <img [src]="user.photoURL" alt="User avatar" class="w-5 h-5 rounded-full border border-zinc-700 object-cover" />
+          } @else {
+            <mat-icon class="text-zinc-400 text-sm">account_circle</mat-icon>
+          }
+          <span class="text-xs font-medium text-zinc-200 max-w-[110px] truncate">{{ user.displayName || user.email }}</span>
+          <button (click)="onLogout()" title="Sign Out" class="text-zinc-500 hover:text-red-400 transition-colors flex items-center ml-1">
+            <mat-icon class="text-sm">logout</mat-icon>
+          </button>
+        </div>
+      } @else {
+        <button (click)="onGoogleSignIn()" class="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-lg text-xs font-medium text-zinc-200 transition-all flex items-center gap-2">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+            <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+            <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
+          </svg>
+          Google Sign In
+        </button>
+      }
     </div>
   </nav>
 
