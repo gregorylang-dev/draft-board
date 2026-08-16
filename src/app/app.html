@@ -67,4 +67,28 @@
   <div class="flex-1 bg-zinc-950">
     <router-outlet></router-outlet>
   </div>
+
+  <!-- Toast Notification Overlay -->
+  @if (toast(); as t) {
+    <div 
+      class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl backdrop-blur-md border transition-all max-w-md animate-bounce"
+      [class.bg-red-950\/95]="t.type === 'error'"
+      [class.border-red-800\/80]="t.type === 'error'"
+      [class.text-red-200]="t.type === 'error'"
+      [class.bg-emerald-950\/95]="t.type === 'success'"
+      [class.border-emerald-800\/80]="t.type === 'success'"
+      [class.text-emerald-200]="t.type === 'success'"
+      [class.bg-zinc-900\/95]="t.type === 'info'"
+      [class.border-zinc-700\/80]="t.type === 'info'"
+      [class.text-zinc-200]="t.type === 'info'"
+    >
+      <mat-icon class="text-xl">
+        {{ t.type === 'error' ? 'error_outline' : t.type === 'success' ? 'check_circle' : 'info' }}
+      </mat-icon>
+      <span class="text-sm font-medium">{{ t.message }}</span>
+      <button (click)="toastService.dismiss()" class="ml-auto text-zinc-400 hover:text-white transition-colors">
+        <mat-icon class="text-sm">close</mat-icon>
+      </button>
+    </div>
+  }
 </div>

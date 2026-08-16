@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DraftService, Player } from './draft';
+import { AuthService } from './auth.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -12,7 +13,9 @@ import { DraftService, Player } from './draft';
 })
 export class Home {
   private draftService = inject(DraftService);
+  private authService = inject(AuthService);
 
+  currentUser = this.authService.currentUser;
   searchQuery = signal('');
   selectedTeam = signal('Team 1');
 

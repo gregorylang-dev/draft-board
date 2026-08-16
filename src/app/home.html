@@ -70,10 +70,12 @@
                   <div class="text-xs text-zinc-500 font-mono">{{ player.team }} • {{ player.position }}</div>
                 </div>
               </div>
-              <button (click)="onDraft(player)" class="btn-primary opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all">
-                <mat-icon>add</mat-icon>
-                Draft
-              </button>
+              @if (currentUser()) {
+                <button (click)="onDraft(player)" class="btn-primary opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all">
+                  <mat-icon>add</mat-icon>
+                  Draft
+                </button>
+              }
             </div>
           } @empty {
             <div class="text-center py-12 text-zinc-600 italic">

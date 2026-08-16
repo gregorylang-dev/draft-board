@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { ref, onValue, set } from 'firebase/database';
 import { db } from './firebase.config';
 import { Player, getDefaultPlayers } from './nfl-players';
+import { AuthService } from './auth.service';
+import { ToastService } from './toast.service';
 
 export type { Player };
 
@@ -22,6 +24,8 @@ export class DraftService {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
   private router = inject(Router);
+  private authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
   private players = signal<Player[]>(this.loadInitialPlayers());
   private teams = signal<string[]>([
@@ -39,6 +43,9 @@ export class DraftService {
   isSynced = signal<boolean>(false);
   private pulseTimeout: ReturnType<typeof setTimeout> | undefined;
   private isApplyingRemoteUpdate = false;
+
+  private lastConfirmedLog: DraftPick[] = [];
+  private lastConfirmedIndex: number = 0;
 
   constructor() {
     this.startTimer();
@@ -76,6 +83,8 @@ export class DraftService {
 
   private applyRemoteState(remoteLog: DraftPick[], remoteIndex: number, remotePulse: number | null) {
     this.isApplyingRemoteUpdate = true;
+    this.lastConfirmedLog = remoteLog;
+    this.lastConfirmedIndex = remoteIndex;
     
     // Reconstruct player state from remote log
     const defaultPlayers: Player[] = getDefaultPlayers();
@@ -120,9 +129,13 @@ export class DraftService {
         lastUpdated: new Date().toISOString()
       }).catch(err => {
         console.warn('Error saving to Firebase Realtime Database:', err);
+        this.toastService.show('You do not have permission to draft players.', 'error');
+        // Revert to last confirmed remote state
+        this.applyRemoteState(this.lastConfirmedLog, this.lastConfirmedIndex, null);
       });
     } catch (err) {
       console.warn('Firebase push failed:', err);
+      this.toastService.show('You do not have permission to draft players.', 'error');
     }
   }
 
@@ -278,6 +291,11 @@ export class DraftService {
   });
 
   draftPlayer(playerId: string) {
+    if (!this.authService.currentUser()) {
+      this.toastService.show('You do not have permission to draft players.', 'error');
+      return;
+    }
+
     const player = this.players().find(p => p.id === playerId);
     if (!player || player.isDrafted) return;
 
