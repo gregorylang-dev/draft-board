@@ -17,6 +17,7 @@ export class Grid {
   currentTeamDrafting = this.draftService.currentTeamDrafting;
   timerDisplay = this.draftService.timerDisplay;
   isTimeLow = this.draftService.isTimeLow;
+  pulsingPickNumber = this.draftService.pulsingPickNumber;
   
   // Create a structure: { teamName: Player[] }
   teamPicks = computed(() => {

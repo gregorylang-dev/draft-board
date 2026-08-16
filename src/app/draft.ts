@@ -1,5 +1,6 @@
 import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { Player, getDefaultPlayers } from './nfl-players';
 
 export type { Player };
@@ -18,18 +19,22 @@ export class DraftService {
   private STORAGE_KEY = 'draft_master_state';
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
+  private router = inject(Router);
 
   private players = signal<Player[]>(this.loadInitialPlayers());
   private teams = signal<string[]>([
     'Team 1', 'Team 2', 'Team 3', 'Team 4', 
     'Team 5', 'Team 6', 'Team 7', 'Team 8', 
-    'Team 9', 'Team 10', 'Team 11', 'Team 12'
+    'Team 9', 'Team 10'
   ]);
 
   private draftLog = signal<DraftPick[]>(this.loadInitialLog());
   private currentPickIndex = signal(this.loadInitialIndex());
   private timeRemaining = signal(180); // 3 minutes in seconds
   private timerInterval: ReturnType<typeof setInterval> | undefined;
+
+  pulsingPickNumber = signal<number | null>(null);
+  private pulseTimeout: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     this.startTimer();
@@ -41,7 +46,13 @@ export class DraftService {
     
     this.timerInterval = setInterval(() => {
       if (this.timeRemaining() > 0) {
-        this.timeRemaining.update(time => time - 1);
+        this.timeRemaining.update(time => {
+          const nextTime = time - 1;
+          if (nextTime === 60) {
+            this.router.navigate(['/draft-room']);
+          }
+          return nextTime;
+        });
       }
     }, 1000);
   }
@@ -201,6 +212,15 @@ export class DraftService {
     this.currentPickIndex.update(i => i + 1);
     this.resetTimer();
     this.saveToLocalStorage();
+
+    // Pulse new pick for 10 seconds and return to big board
+    this.pulsingPickNumber.set(pickNumber);
+    if (this.pulseTimeout) clearTimeout(this.pulseTimeout);
+    this.pulseTimeout = setTimeout(() => {
+      this.pulsingPickNumber.set(null);
+    }, 10000);
+
+    this.router.navigate(['/']);
   }
 
   getRoster(teamName: string) {
@@ -211,6 +231,8 @@ export class DraftService {
     this.players.update(players => players.map(p => ({ ...p, isDrafted: false, draftedBy: undefined, draftPick: undefined })));
     this.draftLog.set([]);
     this.currentPickIndex.set(0);
+    this.pulsingPickNumber.set(null);
+    if (this.pulseTimeout) clearTimeout(this.pulseTimeout);
     this.resetTimer();
     this.saveToLocalStorage();
   }

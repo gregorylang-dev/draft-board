@@ -3,7 +3,8 @@ import { Home } from './home';
 import { Grid } from './grid';
 
 export const routes: Routes = [
-  { path: '', component: Home },
-  { path: 'grid', component: Grid },
+  { path: '', component: Grid },
+  { path: 'draft-room', component: Home },
+  { path: 'grid', redirectTo: '' },
   { path: '**', redirectTo: '' }
 ];

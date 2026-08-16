@@ -41,3 +41,21 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   @apply bg-zinc-700;
 }
+
+@keyframes pickPulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(52, 211, 153, 0.5), inset 0 0 15px rgba(52, 211, 153, 0.3);
+    border-color: rgba(52, 211, 153, 0.9);
+    transform: scale(1.02);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(52, 211, 153, 0.95), inset 0 0 25px rgba(52, 211, 153, 0.6);
+    border-color: rgba(16, 185, 129, 1);
+    transform: scale(1.05);
+  }
+}
+
+.pick-pulse-glow {
+  animation: pickPulseGlow 1.2s infinite ease-in-out;
+  z-index: 30 !important;
+}

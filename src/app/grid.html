@@ -54,6 +54,7 @@
               <div 
                 class="h-24 border rounded-lg p-3 flex flex-col justify-center relative overflow-hidden group hover:brightness-125 transition-all"
                 [class]="player ? getTeamColor(player.team) : 'bg-zinc-950/50 border-zinc-800/50'"
+                [class.pick-pulse-glow]="player?.draftPick === pulsingPickNumber()"
               >
                 @if (player) {
                   <div class="absolute top-1 right-2 text-[10px] font-mono text-zinc-700">#{{ player.draftPick }}</div>
