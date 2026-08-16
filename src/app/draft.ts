@@ -38,6 +38,13 @@ export class DraftService {
 
   private draftLog = signal<DraftPick[]>(this.loadInitialLog());
   private currentPickIndex = signal(this.loadInitialIndex());
+  private readonly PICK_DURATION_SECONDS = 180; // 3 minutes
+  // Anchor timestamp (ms) the current pick's countdown is measured from. Shared via
+  // Firebase so every client derives the same remaining time instead of drifting.
+  private pickStartedAt = signal<number>(this.loadInitialPickStartedAt());
+  // Offset between this client's clock and the Firebase server's clock, so timer math
+  // stays correct even if clients' system clocks disagree.
+  private serverTimeOffsetMs = signal<number>(0);
   private timeRemaining = signal(180); // 3 minutes in seconds
   private timerInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -53,6 +60,7 @@ export class DraftService {
   constructor() {
     this.startTimer();
     this.initFirebaseSync();
+    this.initServerTimeOffset();
   }
 
   private loadAutoFlipSetting(): boolean {
@@ -85,8 +93,9 @@ export class DraftService {
           const remoteIndex = typeof data['currentPickIndex'] === 'number' ? data['currentPickIndex'] : 0;
           const remotePulse = typeof data['pulsingPickNumber'] === 'number' ? data['pulsingPickNumber'] : null;
           const remoteTeams = Array.isArray(data['teams']) && data['teams'].length > 0 ? data['teams'] : [...DEFAULT_TEAMS];
+          const remotePickStartedAt = typeof data['pickStartedAt'] === 'number' ? data['pickStartedAt'] : Date.now();
 
-          this.applyRemoteState(remoteLog, remoteIndex, remotePulse, remoteTeams);
+          this.applyRemoteState(remoteLog, remoteIndex, remotePulse, remoteTeams, remotePickStartedAt);
         } else {
           this.isSynced.set(true);
         }
@@ -100,13 +109,34 @@ export class DraftService {
     }
   }
 
-  private applyRemoteState(remoteLog: DraftPick[], remoteIndex: number, remotePulse: number | null, remoteTeams?: string[]) {
+  // Tracks the offset between this client's clock and the Firebase server's clock.
+  // Firebase pushes updates to this special path whenever the offset changes, so the
+  // timer self-corrects for clock skew without any polling.
+  private initServerTimeOffset() {
+    if (!this.isBrowser) return;
+    try {
+      const offsetRef = ref(db, '.info/serverTimeOffset');
+      onValue(offsetRef, (snapshot) => {
+        this.serverTimeOffsetMs.set(typeof snapshot.val() === 'number' ? snapshot.val() : 0);
+        this.recomputeTimeRemaining();
+      });
+    } catch (e) {
+      console.warn('Failed to read Firebase server time offset:', e);
+    }
+  }
+
+  private applyRemoteState(remoteLog: DraftPick[], remoteIndex: number, remotePulse: number | null, remoteTeams?: string[], remotePickStartedAt?: number) {
     this.isApplyingRemoteUpdate = true;
     this.lastConfirmedLog = remoteLog;
     this.lastConfirmedIndex = remoteIndex;
-    
+
     if (remoteTeams && Array.isArray(remoteTeams)) {
       this.teams.set(remoteTeams);
+    }
+
+    if (typeof remotePickStartedAt === 'number') {
+      this.pickStartedAt.set(remotePickStartedAt);
+      this.recomputeTimeRemaining();
     }
 
     // Reconstruct player state from remote log
@@ -150,6 +180,7 @@ export class DraftService {
         currentPickIndex: this.currentPickIndex(),
         pulsingPickNumber: pulsingPickNumber,
         teams: this.teams(),
+        pickStartedAt: this.pickStartedAt(),
         lastUpdated: new Date().toISOString()
       }).catch(err => {
         console.warn('Error saving to Firebase Realtime Database:', err);
@@ -166,26 +197,38 @@ export class DraftService {
   private startTimer() {
     if (!this.isBrowser) return;
     if (this.timerInterval) clearInterval(this.timerInterval);
-    
+
+    this.recomputeTimeRemaining();
     this.timerInterval = setInterval(() => {
-      if (this.timeRemaining() > 0) {
-        this.timeRemaining.update(time => {
-          const nextTime = time - 1;
-          if (nextTime === 60 && this.autoFlipEnabled()) {
-            this.router.navigate(['/draft-room']);
-          }
-          return nextTime;
-        });
-      }
+      this.recomputeTimeRemaining();
     }, 1000);
   }
 
+  // Derives the remaining time from the shared pickStartedAt anchor instead of
+  // decrementing a local counter, so every client (and every tab) always agrees on
+  // the same value the instant pickStartedAt syncs via Firebase, with no drift.
+  private recomputeTimeRemaining() {
+    const serverNow = Date.now() + this.serverTimeOffsetMs();
+    const elapsedSeconds = Math.floor((serverNow - this.pickStartedAt()) / 1000);
+    const nextTime = Math.max(0, this.PICK_DURATION_SECONDS - elapsedSeconds);
+    const prevTime = this.timeRemaining();
+
+    this.timeRemaining.set(nextTime);
+
+    if (prevTime > 60 && nextTime <= 60 && this.autoFlipEnabled()) {
+      this.router.navigate(['/draft-room']);
+    }
+  }
+
   private resetTimer() {
-    this.timeRemaining.set(180);
+    this.pickStartedAt.set(Date.now() + this.serverTimeOffsetMs());
+    this.recomputeTimeRemaining();
   }
 
   manualResetTimer() {
     this.resetTimer();
+    this.saveToLocalStorage();
+    this.pushToFirebase(this.pulsingPickNumber());
   }
 
   private loadInitialPlayers(): Player[] {
@@ -259,6 +302,21 @@ export class DraftService {
       }
     }
     return 0;
+  }
+
+  private loadInitialPickStartedAt(): number {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (typeof data.pickStartedAt === 'number') return data.pickStartedAt;
+        } catch (error) {
+          console.error('Error loading initial pick start time', error);
+        }
+      }
+    }
+    return Date.now();
   }
 
   private saveToLocalStorage() {
@@ -447,7 +505,8 @@ export class DraftService {
     const data = {
       draftLog: this.draftLog(),
       currentPickIndex: this.currentPickIndex(),
-      teams: this.teams()
+      teams: this.teams(),
+      pickStartedAt: this.pickStartedAt()
     };
     return JSON.stringify(data, null, 2);
   }
