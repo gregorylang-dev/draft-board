@@ -72,7 +72,8 @@
             @for (round of rounds(); track round) {
               @let player = teamPicks()[team][round - 1];
               <div 
-                class="h-24 border rounded-lg p-3 flex flex-col justify-center relative overflow-hidden group hover:brightness-125 transition-all"
+                [id]="player?.draftPick ? 'pick-cell-' + player.draftPick : null"
+                class="h-24 border rounded-lg p-3 flex flex-col justify-center relative overflow-hidden group hover:brightness-125 transition-all scroll-m-8"
                 [class]="player ? getTeamColor(player.team) : 'bg-zinc-950/50 border-zinc-800/50'"
                 [class.pick-pulse-glow]="player?.draftPick === pulsingPickNumber()"
               >

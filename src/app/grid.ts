@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, computed, signal, effect, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { DraftService, Player } from './draft';
@@ -12,6 +12,8 @@ import { DraftService, Player } from './draft';
 })
 export class Grid {
   private draftService = inject(DraftService);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
   allTeams = this.draftService.allTeams;
   currentPickNumber = this.draftService.currentPickNumber;
@@ -22,6 +24,34 @@ export class Grid {
   
   editingIndex = signal<number | null>(null);
   editingValue = signal<string>('');
+
+  constructor() {
+    effect(() => {
+      const pickNum = this.pulsingPickNumber();
+      if (pickNum !== null && pickNum !== undefined) {
+        this.scrollToPick(pickNum);
+      }
+    });
+  }
+
+  private scrollToPick(pickNumber: number) {
+    if (!this.isBrowser) return;
+
+    const tryScroll = (attempts = 0) => {
+      const el = document.getElementById(`pick-cell-${pickNumber}`) || document.querySelector('.pick-pulse-glow');
+      if (el) {
+        el.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'center'
+        });
+      } else if (attempts < 10) {
+        setTimeout(() => tryScroll(attempts + 1), 60);
+      }
+    };
+
+    setTimeout(() => tryScroll(), 50);
+  }
 
   startEditing(index: number, currentName: string) {
     this.editingIndex.set(index);
