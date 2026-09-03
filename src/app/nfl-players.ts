@@ -11,15 +11,9 @@ export interface Player {
 export type RosterEntry = Omit<Player, 'isDrafted' | 'draftedBy' | 'draftPick'>;
 
 // Grouped by team so rosters are easy to scan and edit.
-// Depth charts as of 2026-08-15 (NFL preseason) — QB/TE 2 deep, RB 3 deep, WR 4 deep,
+// Final 53-man depth charts — QB/TE 2 deep, RB 3 deep, WR 4 deep,
 // 1 kicker, and a single DEF entry representing each team's defense as a unit.
-//
-// Preseason caveat: rosters are still being finalized (cuts to 53 happen late August),
-// so several slots — especially WR3/4, RB2/3, and a few contested QB battles — are fluid
-// and worth re-checking after final roster cuts.
-//
-// TODO: Foster Moreau was returned as TE2 for both HOU and NO by independent research
-// passes — he can only be on one roster. Verify and remove from the wrong team.
+
 export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
   ARI: [
     { id: 'ARI-QB1', name: 'Jacoby Brissett', position: 'QB', team: 'ARI' },
@@ -127,8 +121,6 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'CIN-DEF', name: 'Cincinnati Bengals Defense', position: 'DEF', team: 'CIN' },
   ],
   CLE: [
-    // QB1/QB2 order is a genuine, unsettled camp battle as of 2026-08-15 (Watson started
-    // preseason G1, Sanders slated for G2) — treat as fluid.
     { id: 'CLE-QB1', name: 'Deshaun Watson', position: 'QB', team: 'CLE' },
     { id: 'CLE-QB2', name: 'Shedeur Sanders', position: 'QB', team: 'CLE' },
     { id: 'CLE-RB1', name: 'Quinshon Judkins', position: 'RB', team: 'CLE' },
@@ -214,8 +206,7 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'HOU-WR3', name: 'Jaylin Noel', position: 'WR', team: 'HOU' },
     { id: 'HOU-WR4', name: 'Tank Dell', position: 'WR', team: 'HOU' },
     { id: 'HOU-TE1', name: 'Dalton Schultz', position: 'TE', team: 'HOU' },
-    // See TODO above: Foster Moreau conflicts with NO-TE2, verify which team is correct.
-    { id: 'HOU-TE2', name: 'Foster Moreau', position: 'TE', team: 'HOU' },
+    { id: 'HOU-TE2', name: 'Cade Stover', position: 'TE', team: 'HOU' },
     { id: 'HOU-K1', name: "Ka'imi Fairbairn", position: 'K', team: 'HOU' },
     { id: 'HOU-DEF', name: 'Houston Texans Defense', position: 'DEF', team: 'HOU' },
   ],
@@ -332,8 +323,8 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'MIN-RB3', name: 'Zavier Scott', position: 'RB', team: 'MIN' },
     { id: 'MIN-WR1', name: 'Justin Jefferson', position: 'WR', team: 'MIN' },
     { id: 'MIN-WR2', name: 'Jordan Addison', position: 'WR', team: 'MIN' },
-    // Only 3 fantasy-relevant WRs confirmed; WR4 was unsettled per sources at fetch time.
     { id: 'MIN-WR3', name: 'Jauan Jennings', position: 'WR', team: 'MIN' },
+    { id: 'MIN-WR4', name: 'Trent Sherfield', position: 'WR', team: 'MIN' },
     { id: 'MIN-TE1', name: 'T.J. Hockenson', position: 'TE', team: 'MIN' },
     { id: 'MIN-TE2', name: 'Josh Oliver', position: 'TE', team: 'MIN' },
     { id: 'MIN-K1', name: 'Will Reichard', position: 'K', team: 'MIN' },
@@ -365,7 +356,6 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'NO-WR3', name: 'Devaughn Vele', position: 'WR', team: 'NO' },
     { id: 'NO-WR4', name: 'Mason Tipton', position: 'WR', team: 'NO' },
     { id: 'NO-TE1', name: 'Juwan Johnson', position: 'TE', team: 'NO' },
-    // See TODO above: Foster Moreau conflicts with HOU-TE2, verify which team is correct.
     { id: 'NO-TE2', name: 'Foster Moreau', position: 'TE', team: 'NO' },
     { id: 'NO-K1', name: 'Charlie Smyth', position: 'K', team: 'NO' },
     { id: 'NO-DEF', name: 'New Orleans Saints Defense', position: 'DEF', team: 'NO' },
@@ -418,9 +408,11 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
   PIT: [
     { id: 'PIT-QB1', name: 'Aaron Rodgers', position: 'QB', team: 'PIT' },
     { id: 'PIT-QB2', name: 'Mason Rudolph', position: 'QB', team: 'PIT' },
+    { id: 'PIT-QB3', name: 'Will Howard', position: 'QB', team: 'PIT' },
+    { id: 'PIT-QB4', name: 'Drew Allar', position: 'QB', team: 'PIT' },
     { id: 'PIT-RB1', name: 'Jaylen Warren', position: 'RB', team: 'PIT' },
     { id: 'PIT-RB2', name: 'Rico Dowdle', position: 'RB', team: 'PIT' },
-    { id: 'PIT-RB3', name: 'Kaleb Johnson', position: 'RB', team: 'PIT' },
+    { id: 'PIT-RB3', name: 'Eli Heidenreich', position: 'RB', team: 'PIT' },
     { id: 'PIT-WR1', name: 'DK Metcalf', position: 'WR', team: 'PIT' },
     { id: 'PIT-WR2', name: 'Michael Pittman Jr.', position: 'WR', team: 'PIT' },
     { id: 'PIT-WR3', name: 'Roman Wilson', position: 'WR', team: 'PIT' },
