@@ -462,7 +462,11 @@ export class DraftService {
   }
 
   getRoster(teamName: string) {
-    return computed(() => this.players().filter(p => p.draftedBy === teamName));
+    return computed(() => 
+      this.players()
+        .filter(p => p.draftedBy === teamName)
+        .sort((a, b) => (a.draftPick ?? 0) - (b.draftPick ?? 0))
+    );
   }
 
   updateTeamName(index: number, newName: string) {

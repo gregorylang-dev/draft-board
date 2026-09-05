@@ -85,4 +85,36 @@ describe('DraftService - Team Names', () => {
     expect(service.log().length).toBe(1);
     expect(service.currentPickNumber()).toBe(2);
   });
+
+  it('should return team roster ordered by draft pick number regardless of initial player ranking', () => {
+    (service as any).authService = { currentUser: () => ({ uid: 'user123' }) };
+
+    // Team 1 drafts player at index 10 (lower ADP rank) with Pick #1
+    const lowerRankedPlayer = service.availablePlayers()[10];
+    service.draftPlayer(lowerRankedPlayer.id);
+
+    // Simulate picks 2 through 12 for other teams
+    for (let i = 1; i < 12; i++) {
+      service.draftPlayer(service.availablePlayers()[0].id);
+    }
+
+    // Simulate picks 13 through 23 in round 2 (snake draft returns to Team 1 at pick 24)
+    for (let i = 0; i < 11; i++) {
+      service.draftPlayer(service.availablePlayers()[0].id);
+    }
+
+    // Team 1 is on the clock for Pick #24 and drafts player at index 0 (top ADP rank)
+    const topRankedPlayer = service.availablePlayers()[0];
+    expect(service.currentTeamDrafting()).toBe('Team 1');
+    expect(service.currentPickNumber()).toBe(24);
+    service.draftPlayer(topRankedPlayer.id);
+
+    const team1Roster = service.getRoster('Team 1')();
+    expect(team1Roster.length).toBe(2);
+    // Pick 1 (Round 1) should be first, Pick 24 (Round 2) should be second
+    expect(team1Roster[0].id).toBe(lowerRankedPlayer.id);
+    expect(team1Roster[0].draftPick).toBe(1);
+    expect(team1Roster[1].id).toBe(topRankedPlayer.id);
+    expect(team1Roster[1].draftPick).toBe(24);
+  });
 });
