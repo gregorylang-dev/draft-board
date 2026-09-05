@@ -17,9 +17,9 @@ export interface DraftPick {
 }
 
 export const DEFAULT_TEAMS = [
-  'Team 1', 'Team 2', 'Team 3', 'Team 4', 
-  'Team 5', 'Team 6', 'Team 7', 'Team 8', 
-  'Team 9', 'Team 10'
+  'Team 1', 'Team 2', 'Team 3', 'Team 4',
+  'Team 5', 'Team 6', 'Team 7', 'Team 8',
+  'Team 9', 'Team 10', 'Team 11', 'Team 12'
 ];
 
 @Injectable({
@@ -373,14 +373,14 @@ export class DraftService {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   });
   isTimeLow = computed(() => this.timeRemaining() < 30);
-  
+
   currentPickNumber = computed(() => this.currentPickIndex() + 1);
   currentTeamDrafting = computed(() => {
     const teams = this.teams();
     const index = this.currentPickIndex();
     const round = Math.floor(index / teams.length);
     const posInRound = index % teams.length;
-    
+
     // Snake draft logic
     if (round % 2 === 0) {
       return teams[posInRound];
@@ -401,7 +401,7 @@ export class DraftService {
     const teamName = this.currentTeamDrafting();
     const pickNumber = this.currentPickNumber();
 
-    this.players.update(players => players.map(p => 
+    this.players.update(players => players.map(p =>
       p.id === playerId ? { ...p, isDrafted: true, draftedBy: teamName, draftPick: pickNumber } : p
     ));
 
@@ -444,7 +444,7 @@ export class DraftService {
     this.draftLog.update(log => log.slice(0, log.length - 1));
 
     // Reset player drafted status
-    this.players.update(players => players.map(p => 
+    this.players.update(players => players.map(p =>
       p.id === lastPick.player.id ? { ...p, isDrafted: false, draftedBy: undefined, draftPick: undefined } : p
     ));
 
@@ -477,11 +477,11 @@ export class DraftService {
     this.teams.set(currentTeams);
 
     // Update existing picks in log & players if team was renamed
-    this.draftLog.update(log => log.map(pick => 
+    this.draftLog.update(log => log.map(pick =>
       pick.teamName === oldName ? { ...pick, teamName: validName } : pick
     ));
 
-    this.players.update(players => players.map(p => 
+    this.players.update(players => players.map(p =>
       p.draftedBy === oldName ? { ...p, draftedBy: validName } : p
     ));
 
