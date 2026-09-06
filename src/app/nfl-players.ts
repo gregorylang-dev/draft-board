@@ -55,6 +55,7 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'BAL-WR2', name: 'Rashod Bateman', position: 'WR', team: 'BAL' },
     { id: 'BAL-WR3', name: 'Devontez Walker', position: 'WR', team: 'BAL' },
     { id: 'BAL-WR4', name: 'Chris Moore', position: 'WR', team: 'BAL' },
+    { id: 'BAL-WR5', name: 'JaKobi Lane', position: 'WR', team: 'BAL' },
     { id: 'BAL-TE1', name: 'Mark Andrews', position: 'TE', team: 'BAL' },
     { id: 'BAL-TE2', name: 'Durham Smythe', position: 'TE', team: 'BAL' },
     { id: 'BAL-K1', name: 'Tyler Loop', position: 'K', team: 'BAL' },
