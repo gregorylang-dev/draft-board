@@ -388,7 +388,7 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'NYJ-WR3', name: 'Isaiah Williams', position: 'WR', team: 'NYJ' },
     { id: 'NYJ-WR4', name: 'Arian Smith', position: 'WR', team: 'NYJ' },
     { id: 'NYJ-TE1', name: 'Mason Taylor', position: 'TE', team: 'NYJ' },
-    { id: 'NYJ-TE2', name: 'Jeremy Ruckert', position: 'TE', team: 'NYJ' },
+    { id: 'NYJ-TE2', name: 'Kenyon Sadiq', position: 'TE', team: 'NYJ' },
     { id: 'NYJ-K1', name: 'Jason Sanders', position: 'K', team: 'NYJ' },
     { id: 'NYJ-DEF', name: 'New York Jets Defense', position: 'DEF', team: 'NYJ' },
   ],
