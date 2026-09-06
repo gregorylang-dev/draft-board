@@ -140,7 +140,7 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'DAL-QB1', name: 'Dak Prescott', position: 'QB', team: 'DAL' },
     { id: 'DAL-QB2', name: 'Joe Milton III', position: 'QB', team: 'DAL' },
     { id: 'DAL-RB1', name: 'Javonte Williams', position: 'RB', team: 'DAL' },
-    { id: 'DAL-RB2', name: 'Jaydon Blue', position: 'RB', team: 'DAL' },
+    { id: 'DAL-RB2', name: 'Malik Davis', position: 'RB', team: 'DAL' },
     { id: 'DAL-RB3', name: 'Phil Mafah', position: 'RB', team: 'DAL' },
     { id: 'DAL-WR1', name: 'CeeDee Lamb', position: 'WR', team: 'DAL' },
     { id: 'DAL-WR2', name: 'George Pickens', position: 'WR', team: 'DAL' },
