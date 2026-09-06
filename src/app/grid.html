@@ -37,8 +37,28 @@
 
   <main class="flex-1 overflow-x-auto glass-panel p-6 custom-scrollbar">
     <div class="inline-flex gap-4 min-w-full">
-    @for (team of allTeams(); track $index; let i = $index) {
-      <div class="flex-shrink-0 w-64 flex flex-col gap-4">
+      <!-- Sticky Round Number Column -->
+      <div class="sticky left-0 z-20 flex-shrink-0 w-20 flex flex-col gap-4 bg-zinc-950/95 backdrop-blur-md pr-2 border-r border-zinc-800/60 shadow-2xl">
+        <!-- Round Header -->
+        <div class="bg-zinc-900/80 border border-zinc-800 p-3 rounded-lg text-center min-h-[72px] flex flex-col items-center justify-center">
+          <div class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Round</div>
+          <mat-icon class="text-sm text-zinc-500 mt-0.5">swap_vert</mat-icon>
+        </div>
+
+        <!-- Round Numbers List -->
+        <div class="flex flex-col gap-2">
+          @for (round of rounds(); track round) {
+            <div class="h-24 bg-zinc-900/60 border border-zinc-800/80 rounded-lg p-3 flex flex-col items-center justify-center shadow-inner">
+              <div class="text-[10px] text-zinc-500 uppercase tracking-widest font-mono font-bold">Round</div>
+              <div class="text-2xl font-mono font-bold text-emerald-400">{{ round }}</div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Team Columns -->
+      @for (team of allTeams(); track $index; let i = $index) {
+        <div class="flex-shrink-0 w-64 flex flex-col gap-4">
         <!-- Team Header -->
         <div class="bg-zinc-950 border border-zinc-800 p-3 rounded-lg text-center relative min-h-[72px] flex flex-col justify-center">
           @if (editingIndex() === i) {
