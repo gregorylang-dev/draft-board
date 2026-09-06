@@ -221,6 +221,7 @@ export const NFL_PLAYERS_BY_TEAM: Record<string, RosterEntry[]> = {
     { id: 'IND-WR2', name: 'Josh Downs', position: 'WR', team: 'IND' },
     { id: 'IND-WR3', name: 'Ashton Dulin', position: 'WR', team: 'IND' },
     { id: 'IND-WR4', name: 'Nick Westbrook-Ikhine', position: 'WR', team: 'IND' },
+    { id: 'IND-WR5', name: 'Keenan Allen Jr.', position: 'WR', team: 'IND' },
     { id: 'IND-TE1', name: 'Tyler Warren', position: 'TE', team: 'IND' },
     { id: 'IND-TE2', name: 'Mo Alie-Cox', position: 'TE', team: 'IND' },
     { id: 'IND-K1', name: 'Blake Grupe', position: 'K', team: 'IND' },
